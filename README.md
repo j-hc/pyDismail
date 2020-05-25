@@ -1,19 +1,17 @@
 pyDismail
 ==============
 
-:info: a pretty basic scraper for yadim.dismail.de, a disposable mail provider
+a pretty basic scraper for yadim.dismail.de, a disposable mail provider
 
 Installation
 ------------
 not on pyPi soo..
-.. code-block:: shell
 
     pip install .
 
 Usage
 -----
 
-.. code-block:: python
 
     from pyDismail import Dismail
     disposable_mail = Dismail(mail="example")
