@@ -74,6 +74,15 @@ class Dismail:
             mailObjs.append(_mailObj(*first_tags[i]))
         return mailObjs
 
+    def get_eml(self, id_):
+        params = (
+            ('action', 'download_email'),
+            ('email_id', id_),
+            ('address', self.mail),
+        )
+        response = requests.get(self.__base_url, params=params)
+        return response.content
+
     def __fetch_ids(self):
         response = self.__req_obj.get('{0}/?{1}'.format(self.__base_url, self.mail))
         soup = BeautifulSoup(response.content, "lxml")
@@ -83,10 +92,11 @@ class Dismail:
             ids.append(stat["href"].split("-")[2])
         return "|".join(ids)
 
-    def delete_by_id(self, id):
+    def delete_by_id(self, id_):
         params = (
             ('action', 'delete_email'),
-            ('email_id', str(id)),
+            ('email_id', str(id_)),
             ('address', self.mail),
         )
         self.__req_obj.get(self.__base_url, params=params)
+
