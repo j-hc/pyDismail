@@ -28,19 +28,21 @@ class Dismail:
     __req_obj = requests.Session()
     __base_url = "https://yadim.dismail.de/"
 
-    def __init__(self, mail="random"):
+    def __init__(self, mail="random", fetch_on_start=False):
         if mail == "random":
             self.mail = self.getRandom()
         if '@yadim.dismail.de' in mail:
             self.mail = mail
         else:
             self.mail = mail + "@yadim.dismail.de"
-        self.__mails_recvd = self.__fetch_ids()
+        if fetch_on_start:
+            self.__mails_recvd = self.__fetch_ids()
+        else:
+            self.__mails_recvd = None
         
     def __getRandom(size=6, chars=string.ascii_lowercase + string.digits):
         base = ''.join(random.choice(chars) for _ in range(size))
         return base + "@yadim.dismail.de"
-
 
     def check_for_new(self):
         params = (
