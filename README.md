@@ -23,10 +23,10 @@ Usage
 	print(mails[0])
 	# (Mail Object: 92345, example@gmail.com, datetime.datetime(2020, 5, 25, 12, 12, 12), SUBJECT, CONTENT)
 	
-	disposable_mail.delete_by_id(mail[0].id)
+	disposable_mail.delete_mail(mail[0])
 	
 	disposable_mail.check_for_new() # return True if new mail arrived after object created
 	
-	disposable_mail.get_eml(mail[0].id)
+	disposable_mail.get_eml(mail[0})
 	
 	

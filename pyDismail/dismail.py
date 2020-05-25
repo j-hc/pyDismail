@@ -6,8 +6,8 @@ import datetime
 
 
 class _mailObj:
-    def __init__(self, id, sender, time, title, body):
-        self.id = id
+    def __init__(self, id_, sender, time, title, body):
+        self.id_ = id_
         self.sender = sender
         self.title = title
         self.body = body
@@ -58,12 +58,12 @@ class Dismail:
         first_tags = []
         second_tags = []
         for header_tag in status.find_all('a', class_='list-group-item list-group-item-action email-list-item'):
-            id = header_tag["href"].split("-")[2]
+            id_ = header_tag["href"].split("-")[2]
             sender = header_tag.find('span').text
             title = header_tag.find('p').text.strip()
             time = header_tag.find('small').get("title")
             date_time_obj = datetime.datetime.strptime(time, '%Y-%m-%d %H:%M:%S')
-            first_tags.append([id, sender, date_time_obj, title])
+            first_tags.append([id_, sender, date_time_obj, title])
         for body_tag in status.find_all('div', class_='card-block email-body'):
             for not_needed in body_tag.find_all('div'):
                 not_needed.extract()
@@ -74,10 +74,10 @@ class Dismail:
             mailObjs.append(_mailObj(*first_tags[i]))
         return mailObjs
 
-    def get_eml(self, id_):
+    def get_eml(self, mailObj):
         params = (
             ('action', 'download_email'),
-            ('email_id', id_),
+            ('email_id', mailObj.id_),
             ('address', self.mail),
         )
         response = requests.get(self.__base_url, params=params)
@@ -92,10 +92,10 @@ class Dismail:
             ids.append(stat["href"].split("-")[2])
         return "|".join(ids)
 
-    def delete_by_id(self, id_):
+    def delete_mail(self, mailObj):
         params = (
             ('action', 'delete_email'),
-            ('email_id', str(id_)),
+            ('email_id', mailObj.id_),
             ('address', self.mail),
         )
         self.__req_obj.get(self.__base_url, params=params)
