@@ -6,8 +6,8 @@ import datetime
 
 
 class _mailObj:
-    def __init__(self, id, sender, time, title, body):
-        self.id = id
+    def __init__(self, id_, sender, time, title, body):
+        self.id_ = id_
         self.sender = sender
         self.title = title
         self.plain_body = self._plain_builder(body)
@@ -15,7 +15,7 @@ class _mailObj:
         self.time = time
 
     def __repr__(self):
-        return '(Mail Object: {}, {}, {}, {}, {})'.format(self.id, self.sender, self.time, self.title, self.plain_body.encode())
+        return '(Mail Object: {}, {}, {}, {}, {})'.format(self.id_, self.sender, self.time, self.title, self.plain_body.encode())
 
     def _plain_builder(self, body):
         text = ""
