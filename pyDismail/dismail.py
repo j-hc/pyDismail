@@ -6,15 +6,22 @@ import datetime
 
 
 class _mailObj:
-    def __init__(self, id_, sender, time, title, body):
-        self.id_ = id_
+    def __init__(self, id, sender, time, title, body):
+        self.id = id
         self.sender = sender
         self.title = title
-        self.body = body
+        self.plain_body = self._plain_builder(body)
+        self.html_body = body
         self.time = time
 
     def __repr__(self):
-        return '(Mail Object: {}, {}, {}, {}, {})'.format(self.id, self.sender, self.time, self.title, self.body.encode())
+        return '(Mail Object: {}, {}, {}, {}, {})'.format(self.id, self.sender, self.time, self.title, self.plain_body.encode())
+
+    def _plain_builder(self, body):
+        text = ""
+        for txt in body.findAll(text=True, recursive=True):
+            text += txt.strip()
+        return text
 
 
 class Dismail:
