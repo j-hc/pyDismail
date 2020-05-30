@@ -31,6 +31,6 @@ Usage
 	
 	disposable_mail.delete_mail(mail[0])
 	disposable_mail.check_for_new() # return True if new mail arrived after object created
-	disposable_mail.get_eml(mail[0})
+	disposable_mail.get_eml(mail[0])
 	
 	
