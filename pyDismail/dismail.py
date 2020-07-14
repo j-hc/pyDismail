@@ -30,7 +30,7 @@ class Dismail:
 
     def __init__(self, mail="random", fetch_on_start=False):
         if mail == "random":
-            self.mail = self.getRandom()
+            self.mail = self.__getRandom()
         if '@yadim.dismail.de' in mail:
             self.mail = mail
         else:
