@@ -75,7 +75,7 @@ class Dismail:
             first_tags.append([id_, sender, date_time_obj, title])
         for body_tag in status.find_all('div', class_='card-block email-body'):
             for not_needed in body_tag.find_all('div', class_="float-right primary"):
-                not_needed.extract()
+                not_needed.decompose()
             second_tags.append(body_tag)
 
         for i in range(0, len(first_tags)):
