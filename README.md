@@ -1,36 +1,41 @@
 pyDismail
 ==============
 
-a pretty basic scraper for yadim.dismail.de, a disposable mail provider
+an API wrapper for yadim.dismail.de, a disposable mail provider
 
 Installation
 ------------
 not on pyPi soo..
+    
+    git clone https://github.com/scrubjay55/pyDismail
+    pip3 install ./pyDismail
 
-    pip install .
 
 Usage
 -----
 
-
     from pyDismail import Dismail
 	
-    disposable_mail = Dismail(mail="example")
+    disposable_mail = Dismail(mail="example", fetch_on_start=False) # if mail is left None, a random one will be assigned
 	print(disposable_mail.mail)
 	# example@yadim.dismail.de
 	
-	mails = Dismail.fetch_all_mails()
-	print(mails[0])
-	# (Mail Object: 92345, example@gmail.com, datetime.datetime(2020, 5, 25, 12, 12, 12), SUBJECT, CONTENT)
+	mails = disposable_mail.fetch_all_mails()
+    last_received_mail = mails[-1]
+	print(last_received_mail)
+	# (Mail: sender=SENDER, time=DATETIME, subject=SUBJECT, id=ID, body=BODY)
 	
-	print(mails[0].html_body)
-	# <body><p>This is an email</p><p>. Hello</p></body>
+	print(last_received_mail.parsed_eml)
+	# parsed eml of the email
 	
-	print(mails[0].plain_body)
+	print(last_received_mail.body)  # plain body of the email
 	# This is an email. Hello
 	
-	disposable_mail.delete_mail(mail[0])
-	disposable_mail.check_for_new() # return True if new mail arrived after object created
-	disposable_mail.get_eml(mail[0])
-	
-	
+	disposable_mail.delete_mail(last_received_mail)
+    # deletes the mail from the server, though still can be read from disposable_mail.all_mails
+
+    is_there_new_mail = disposable_mail.check_for_new()
+    # returns the amount of the new mails after the last fetch_all_mails was called
+    
+	disposable_mail.get_eml(last_received_mail)
+    # returns the raw eml content of the email

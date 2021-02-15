@@ -1,3 +1,5 @@
-/pyDismail/__pycache__
+__pycache__
 pyDismail.egg-info
 build
+venv
+.idea

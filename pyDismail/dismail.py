@@ -1,111 +1,97 @@
 import requests
 import string
-from bs4 import BeautifulSoup
 import random
-import datetime
+import re
+from eml_parser import EmlParser
+from datetime import datetime
 
 
-class _mailObj:
-    def __init__(self, id_, sender, time, title, body):
-        self.id_ = id_
-        self.sender = sender
-        self.title = title
-        self.plain_body = self._plain_builder(body)
-        self.html_body = body
-        self.time = time
+class _Mail:
+    def __init__(self, mail_id, sender, time, subject, body, parsed_eml):
+        self.parsed_eml: dict = parsed_eml
+        self.mail_id: int = mail_id
+        self.sender: str = sender
+        self.subject: str = subject
+        self.body: str = body
+        self.time: datetime = time
+
+        if len(self.body) > 30:
+            self._truncated_body = f"{self.body[:30]}..."
+        else:
+            self._truncated_body = self.body
 
     def __repr__(self):
-        return '(Mail Object: {}, {}, {}, {}, {})'.format(self.id_, self.sender, self.time, self.title, self.plain_body.encode())
-
-    def _plain_builder(self, body):
-        text = ""
-        for txt in body.findAll(text=True, recursive=True):
-            text += txt.strip()
-        return text
+        return '(Mail: sender={}, time={}, subject={}, id={}, body={})'\
+            .format(self.sender, self.time, self.subject, self.mail_id, self._truncated_body)
 
 
 class Dismail:
-    __req_obj = requests.Session()
-    __base_url = "https://yadim.dismail.de/"
+    _req_obj = requests.Session()
+    _base_url = "https://yadim.dismail.de"
+    _re_mail_id = re.compile(b'id="mail-box-(.*?)"')
 
-    def __init__(self, mail="random", fetch_on_start=False):
-        if mail == "random":
-            self.mail = self.__getRandom()
-        if '@yadim.dismail.de' in mail:
+    def __init__(self, mail: str = None, fetch_on_start: bool = True, eml_parser_kwargs: dict = {'include_raw_body': True}):
+        self._eml_parser = EmlParser(**eml_parser_kwargs)
+        if mail is None:
+            self.mail = self._get_random()
+        if mail.endswith('@yadim.dismail.de'):
             self.mail = mail
         else:
-            self.mail = mail + "@yadim.dismail.de"
+            self.mail = f"{mail}@yadim.dismail.de"
+        self._mail_url = f"{self._base_url}/?{self.mail}"
+        self.all_mails = []
+
+        self._mails_recvd = []
         if fetch_on_start:
-            self.__mails_recvd = self.__fetch_ids()
-        else:
-            self.__mails_recvd = None
-        
-    def __getRandom(size=6, chars=string.ascii_lowercase + string.digits):
-        base = ''.join(random.choice(chars) for _ in range(size))
-        return base + "@yadim.dismail.de"
+            self.fetch_all_mails()
 
-    def check_for_new(self):
-        params = (
-            ('action', 'has_new_messages'),
-            ('address', self.mail),
-            ('email_ids', self.__mails_recvd),
-        )
-        response = self.__req_obj.get(self.__base_url, params=params)
-        resp_decoded = response.content.decode()
-        if str(resp_decoded) == "0":
-            return False
-        else:
-            self.__mails_recvd = self.__fetch_ids()
-            return True
+    def _get_random(self):
+        return self._req_obj.get(self._base_url).url.split('?')[1]
 
-    def fetch_all_mails(self):
-        response = self.__req_obj.get('{0}?{1}'.format(self.__base_url, self.mail))
-        main_page = BeautifulSoup(response.content, "lxml")
-        status = main_page.find('div', id="email-list")
+    def check_for_new(self) -> int:
+        params = {
+            'action': 'has_new_messages',
+            'address': self.mail,
+            'email_ids': '|'.join(self._mails_recvd)
+        }
+        response = self._req_obj.get(self._base_url, params=params)
+        return int(response.text)
 
-        mailObjs = []
-        first_tags = []
-        second_tags = []
-        for header_tag in status.find_all('a', class_='list-group-item list-group-item-action email-list-item'):
-            id_ = header_tag["href"].split("-")[2]
-            sender = header_tag.find('span').text
-            title = header_tag.find('p').text.strip()
-            time = header_tag.find('small').get("title")
-            date_time_obj = datetime.datetime.strptime(time, '%Y-%m-%d %H:%M:%S')
-            first_tags.append([id_, sender, date_time_obj, title])
-        for body_tag in status.find_all('div', class_='card-block email-body'):
-            for not_needed in body_tag.find_all('div', class_="float-right primary"):
-                not_needed.decompose()
-            second_tags.append(body_tag)
+    def fetch_all_mails(self) -> list:
+        mail_ids = self._fetch_ids()
+        for mail_id in reversed(mail_ids):
+            if mail_id in self._mails_recvd:
+                continue
+            raw_eml = self._get_eml_by_id(mail_id)
+            parsed_eml = self._eml_parser.decode_email_bytes(raw_eml)
+            body = parsed_eml['body'][0]['content']
+            sender = parsed_eml['header']['from']
+            time = parsed_eml['header']['date']
+            subject = parsed_eml['header']['subject']
+            self.all_mails.append(_Mail(mail_id, sender, time, subject, body, parsed_eml))
+            self._mails_recvd.append(mail_id)
+        return self.all_mails
 
-        for i in range(0, len(first_tags)):
-            first_tags[i].append(second_tags[i])
-            mailObjs.append(_mailObj(*first_tags[i]))
-        return mailObjs
+    def get_eml(self, mail: _Mail) -> bytes:
+        return self._get_eml_by_id(mail.mail_id)
 
-    def get_eml(self, mailObj):
-        params = (
-            ('action', 'download_email'),
-            ('email_id', mailObj.id_),
-            ('address', self.mail),
-        )
-        response = requests.get(self.__base_url, params=params)
+    def _get_eml_by_id(self, mail_id):
+        params = {
+            'action': 'download_email',
+            'email_id': mail_id,
+            'address': self.mail
+        }
+        response = requests.get(self._base_url, params=params)
         return response.content
 
-    def __fetch_ids(self):
-        response = self.__req_obj.get('{0}/?{1}'.format(self.__base_url, self.mail))
-        soup = BeautifulSoup(response.content, "lxml")
-        status = soup.find_all('a', class_='list-group-item list-group-item-action email-list-item')
-        ids = []
-        for stat in status:
-            ids.append(stat["href"].split("-")[2])
-        return "|".join(ids)
+    def _fetch_ids(self):
+        response = self._req_obj.get(self._mail_url)
+        return [mail_id.decode() for mail_id in self._re_mail_id.findall(response.content)]
 
-    def delete_mail(self, mailObj):
-        params = (
-            ('action', 'delete_email'),
-            ('email_id', mailObj.id_),
-            ('address', self.mail),
-        )
-        self.__req_obj.get(self.__base_url, params=params)
-
+    def delete_mail(self, mail: _Mail) -> None:
+        params = {
+            'action': 'delete_email',
+            'email_id': mail.mail_id,
+            'address': self.mail
+        }
+        self._req_obj.get(self._base_url, params=params)
