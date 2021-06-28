@@ -1,6 +1,5 @@
 import requests
-import string
-import random
+from typing import List
 import re
 from eml_parser import EmlParser
 from datetime import datetime
@@ -34,7 +33,7 @@ class Dismail:
         self._eml_parser = EmlParser(**eml_parser_kwargs)
         if mail is None:
             self.mail = self._get_random()
-        if mail.endswith('@yadim.dismail.de'):
+        elif mail.endswith('@yadim.dismail.de'):
             self.mail = mail
         else:
             self.mail = f"{mail}@yadim.dismail.de"
@@ -57,7 +56,7 @@ class Dismail:
         response = self._req_obj.get(self._base_url, params=params)
         return int(response.text)
 
-    def fetch_all_mails(self) -> list:
+    def fetch_all_mails(self) -> List[_Mail]:
         mail_ids = self._fetch_ids()
         for mail_id in reversed(mail_ids):
             if mail_id in self._mails_recvd:
