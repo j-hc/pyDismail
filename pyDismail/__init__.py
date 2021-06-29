@@ -1,1 +1,1 @@
-from pyDismail.dismail import Dismail
+from pyDismail.dismail import YadimDismail, BmOn2Dismail, BlubbermailDismail

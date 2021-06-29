@@ -1,21 +1,21 @@
 pyDismail
 ==============
 
-an API wrapper for yadim.dismail.de, a disposable mail provider
+an API wrapper for temporary/disposable mail providers powered by [synox/disposable-mailbox](https://github.com/synox/disposable-mailbox)
 
 Installation
 ------------
 not on pyPi soo..
-    
-    git clone https://github.com/scrubjay55/pyDismail
-    pip3 install ./pyDismail
+
+    pip install git+git://github.com/scrubjay55/pyDismail@master
 
 
 Usage
 ```python
-from pyDismail import Dismail
+from pyDismail import BlubbermailDismail, BmOn2Dismail, YadimDismail
 
-disposable_mail = Dismail(mail="example", fetch_on_start=False) # if mail is left None, a random one will be assigned
+
+disposable_mail = BlubbermailDismail(mail="example")  # or BmOn2Dismail(mail="example")
 print(disposable_mail.mail)
 # example@yadim.dismail.de
 
@@ -31,11 +31,13 @@ print(last_received_mail.body)  # plain body of the email
 # This is an email. Hello
 
 disposable_mail.delete_mail(last_received_mail)
-# deletes the mail from the server, though still can be read from disposable_mail.all_mails
+# deletes the mail from the server
 
-is_there_new_mail = disposable_mail.check_for_new()
+amount_of_new_mail = disposable_mail.check_for_new()
+print(amount_of_new_mail)
 # returns the amount of the new mails after the last fetch_all_mails was called
 
-disposable_mail.get_eml(last_received_mail)
+raw_eml = disposable_mail.get_eml(last_received_mail)
 # returns the raw eml content of the email
+
 ```

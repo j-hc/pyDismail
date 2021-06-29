@@ -3,3 +3,4 @@ pyDismail.egg-info
 build
 venv
 .idea
+test*.py
