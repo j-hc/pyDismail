@@ -5,9 +5,8 @@ an API wrapper for temporary/disposable mail providers powered by [synox/disposa
 
 Installation
 ------------
-not on pyPi soo..
 
-    pip install git+git://github.com/scrubjay55/pyDismail@master
+    pip install pyDismail
 
 
 Usage

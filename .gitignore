@@ -5,3 +5,4 @@ venv
 .idea
 test*.py
 a.txt
+dist
