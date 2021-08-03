@@ -5,17 +5,17 @@ from datetime import datetime
 from typing import List
 
 
-__all__ = ['YadimDismail', 'BmOn2Dismail', 'BlubbermailDismail']
+__all__ = ['YadimDismail', 'BmOn2Dismail', 'BlubbermailDismail', 'CustomDismail']
 
 
 class Mail:
-    def __init__(self, mail_id, sender, time, subject, body, parsed_eml):
+    def __init__(self, mail_id: str, parsed_eml: dict):
         self.parsed_eml: dict = parsed_eml
-        self.mail_id: int = mail_id
-        self.sender: str = sender
-        self.subject: str = subject
-        self.body: str = body
-        self.time: datetime = time
+        self.mail_id: int = int(mail_id)
+        self.body: str = parsed_eml['body'][0]['content']
+        self.sender: str = parsed_eml['header']['from']
+        self.time: datetime = parsed_eml['header']['date']
+        self.subject: str = parsed_eml['header']['subject']
 
     @property
     def truncated_body(self):
@@ -34,7 +34,6 @@ class Dismail:
     _base_url_api = None
     _domain = None
     __req_session = requests.Session()
-    # __re_mail_id = re.compile(b'id="mail-box-(.*?)"')
     __re_mail_id = re.compile(b'email_ids=(.*?)"')
 
     def __init__(self, mail: str = None, eml_parser_kwargs: dict = None):
@@ -51,6 +50,7 @@ class Dismail:
             self.mail = f"{mail}@{self._domain}"
         self._mail_url = f"{self._base_url}/?{self.mail}"
         self._mail_ids_recvd = []
+        self.all_mails = []
 
     def _get_random(self):
         params = {
@@ -68,20 +68,15 @@ class Dismail:
         return int(response.text)
 
     def fetch_all_mails(self) -> List[Mail]:
-        mails = []
         mail_ids = self._fetch_ids()
         for mail_id in reversed(mail_ids):
             if mail_id in self._mail_ids_recvd:
                 continue
             raw_eml = self._get_eml_by_id(mail_id)
             parsed_eml = self._eml_parser.decode_email_bytes(raw_eml)
-            body = parsed_eml['body'][0]['content']
-            sender = parsed_eml['header']['from']
-            time = parsed_eml['header']['date']
-            subject = parsed_eml['header']['subject']
-            mails.append(Mail(mail_id, sender, time, subject, body, parsed_eml))
+            self.all_mails.append(Mail(mail_id, parsed_eml))
             self._mail_ids_recvd.append(mail_id)
-        return mails
+        return self.all_mails
 
     def get_eml(self, mail: Mail) -> bytes:
         return self._get_eml_by_id(mail.mail_id)
@@ -133,4 +128,12 @@ class BlubbermailDismail(Dismail):
         self._base_url = "https://blubbermail.de"
         self._base_url_api = "https://blubbermail.de/json-api.php"
         self._domain = "blubbermail.de"
+        super().__init__(mail, eml_parser_kwargs)
+
+
+class CustomDismail(Dismail):
+    def __init__(self, base_url: str, base_url_api: str, domain: str, mail: str = None, eml_parser_kwargs: dict = None):
+        self._base_url = base_url
+        self._base_url_api = base_url_api
+        self._domain = domain
         super().__init__(mail, eml_parser_kwargs)

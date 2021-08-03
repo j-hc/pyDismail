@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='pyDismail',
-    version='2',
+    version='2.2',
     project_urls={"Source": "https://github.com/scrubjay55/pyDismail.git"},
     url="https://github.com/scrubjay55/pyDismail.git",
     author='scrubjay55',
